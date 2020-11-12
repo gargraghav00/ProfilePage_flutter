@@ -1,13 +1,17 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
-  MapScreenState createState() => MapScreenState();
+  ProfilePageState createState() => ProfilePageState();
 }
 
-class MapScreenState extends State<ProfilePage>
-    with SingleTickerProviderStateMixin {
+class ProfilePageState extends State<ProfilePage>
+  with SingleTickerProviderStateMixin {
   bool _status = true;
   final FocusNode myFocusNode = FocusNode();
 
@@ -16,11 +20,90 @@ class MapScreenState extends State<ProfilePage>
     // TODO: implement initState
     super.initState();
   }
+  
+  File _image;
+  var _picker=ImagePicker();
+  
+  _cropImage(filePath) async {
+    await ImageCropper.cropImage(
+        sourcePath: filePath.path,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        cropStyle: CropStyle.circle,
+        aspectRatio: CropAspectRatio(ratioX: 1.0, ratioY: 1.0)
+    ).then((croppedImage){
+      if (croppedImage  != null) {
+        setState(() {
+          _image = croppedImage ;
+        });
+      }
+    });
+  }
+
+  _imgFromCamera() async {
+    await _picker.getImage(
+      source: ImageSource.camera, imageQuality: 50
+    ).then((pickedfile){
+      setState(() {
+        if(pickedfile!=null)
+          _image = File(pickedfile.path);
+          _cropImage(_image);
+      });
+    });
+
+    print(_image);
+  }
+
+  _imgFromGallery() async {
+    await _picker.getImage(
+        source: ImageSource.gallery, imageQuality: 50
+      ).then((pickedfile){
+        setState(() {
+          if(pickedfile!=null)
+            _image = File(pickedfile.path);
+            _cropImage(_image);
+        });
+      });
+
+      print(_image);
+    }
+
+  // TODO: IMAGE CROPPER at https://educity.app/flutter/how-to-pick-and-crop-an-image-from-gallery-and-display-it-in-flutter
+  void _showPicker(ctx) {
+      showModalBottomSheet(
+        context: ctx,
+        builder: (_) {
+          return SafeArea(
+            child: Container(
+              child: new Wrap(
+                children: <Widget>[
+                  new ListTile(
+                      leading: new Icon(Icons.photo_library),
+                      title: new Text('Gallery'),
+                      onTap: () {
+                        _imgFromGallery();
+                        Navigator.of(ctx).pop();
+                      }),
+                  new ListTile(
+                    leading: new Icon(Icons.photo_camera),
+                    title: new Text('Camera'),
+                    onTap: () {
+                      _imgFromCamera();
+                      Navigator.of(ctx).pop();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+      );
+    }
 
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-        body: new Container(
+      body: new Container(
       color: Colors.white,
       child: new ListView(
         children: <Widget>[
@@ -44,11 +127,12 @@ class MapScreenState extends State<ProfilePage>
                             Padding(
                               padding: EdgeInsets.only(left: 25.0),
                               child: new Text('PROFILE',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 20.0,
-                                      fontFamily: 'sans-serif-light',
-                                      color: Colors.black)),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20.0,
+                                fontFamily: 'sans-serif-light',
+                                color: Colors.black),
+                              ),
                             )
                           ],
                         )),
@@ -59,34 +143,56 @@ class MapScreenState extends State<ProfilePage>
                           crossAxisAlignment: CrossAxisAlignment.center,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[
-                            new Container(
-                                width: 140.0,
-                                height: 140.0,
-                                decoration: new BoxDecoration(
-                                  shape: BoxShape.rectangle,
-                                  image: new DecorationImage(
-                                    image: new ExactAssetImage('images/as.png'),
-                                    fit: BoxFit.cover,
-                                  ),
-                                )),
+                            Container(
+                              width: 140.0,
+                              height: 140.0,
+                              child: _image!=null
+                              ? CircleAvatar(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(100),
+                                  child: Image.file(
+                                    _image,
+                                    fit: BoxFit.fitWidth
+                                  )
+                                )
+                              )
+                              : CircleAvatar(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(100),
+                                  child: Icon(Icons.ac_unit),
+                                ),
+                              )
+                            ),
                           ],
                         ),
-                        Padding(
+                        !_status
+                        ? Padding(
                             padding: EdgeInsets.only(top: 90.0, right: 100.0),
                             child: new Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: <Widget>[
-                                new CircleAvatar(
-                                  backgroundColor: Colors.red,
-                                  radius: 25.0,
-                                  child: new Icon(
-                                    Icons.camera_alt,
-                                    color: Colors.white,
-                                    
+                                GestureDetector(
+                                  onTap: (){
+                                    setState(() {
+                                      _showPicker(context);
+                                      print(_image);
+                                    });
+                                  },
+                                  child: new CircleAvatar(
+                                    backgroundColor: Colors.red,
+                                    radius: 25.0,
+                                    child: Icon(
+                                      Icons.camera_alt, 
+                                      color: Colors.white, 
+                                    ),
                                   ),
-                                )
+                                ),
                               ],
-                            )),
+                            )
+                          )
+                        : Padding(
+                          padding: EdgeInsets.only(top: 90, right: 100)
+                        ),
                       ]),
                     )
                   ],
