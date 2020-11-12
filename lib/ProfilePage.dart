@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -17,7 +16,6 @@ class ProfilePageState extends State<ProfilePage>
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
   }
   
@@ -68,7 +66,6 @@ class ProfilePageState extends State<ProfilePage>
       print(_image);
     }
 
-  // TODO: IMAGE CROPPER at https://educity.app/flutter/how-to-pick-and-crop-an-image-from-gallery-and-display-it-in-flutter
   void _showPicker(ctx) {
       showModalBottomSheet(
         context: ctx,
